@@ -146,7 +146,7 @@ def main(args):
                 iter_i += 1
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
-            acc = test(model, deepfake_loader.datasets['validation'], btrain=True, device)
+            acc = test(model, deepfake_loader.datasets['validation'], btrain=True, device=device)
             if acc > acc_best:
                 acc_best = acc
                 print('current best acc,', acc_best)
@@ -165,7 +165,7 @@ def main(args):
         torch.save(model.state_dict(), 'last_model_92_sgd.pkl')
 
     else:
-        test(model, deepfake_loader.datasets['test'], btrain=False, device)
+        test(model, deepfake_loader.datasets['test'], btrain=False, device=device)
 
 
 if __name__ == '__main__':
