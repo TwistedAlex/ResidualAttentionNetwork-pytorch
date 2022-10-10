@@ -163,7 +163,6 @@ def main(args):
             print('epoch： ' + str(epoch))
             for sample in train_loader:
                 logger.warning('    iter： ' + str(iter_i))
-                print('    iter： ' + str(iter_i))
                 label_idx_list = sample['labels']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
