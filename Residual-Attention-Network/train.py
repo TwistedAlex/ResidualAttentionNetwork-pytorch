@@ -109,7 +109,6 @@ def main(args):
                                      collate_fn=my_collate)
 
     model = ResidualAttentionModel().to(device)
-    print(model)
 
     lr = 0.1  # 0.1
     criterion = nn.CrossEntropyLoss()
