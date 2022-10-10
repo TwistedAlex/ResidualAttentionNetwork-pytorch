@@ -159,10 +159,10 @@ def main(args):
             model.train()
             tims = time.time()
             iter_i = 0
-            logger.warning('epoch： ' + epoch)
+            logger.warning('epoch： ' + str(epoch))
             print('epoch： ' + str(epoch))
             for sample in train_loader:
-                logger.warning('    iter： ' + iter_i)
+                logger.warning('    iter： ' + str(iter_i))
                 print('    iter： ' + iter_i)
                 label_idx_list = sample['labels']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
@@ -195,7 +195,7 @@ def main(args):
                 acc_best = acc
                 print('current best acc,', acc_best)
                 logger.warning('current best acc,' + str(acc_best))
-                torch.save(model.state_dict(), model_file)
+                torch.save(model.state_dict(), args.out_dir + args.log_name + '/' + model_file)
             # Decaying Learning Rate
             if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
                     epoch + 1) / float(total_epoch) == 0.9:
@@ -208,7 +208,7 @@ def main(args):
                 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
                 # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
         # Save the Model
-        torch.save(model.state_dict(), 'last_model_92_sgd.pkl')
+        torch.save(model.state_dict(), args.out_dir + args.log_name + '/last_model_92_sgd.pkl')
 
     else:
         test(model, deepfake_loader.datasets['test'], logger, btrain=False, device=device)
