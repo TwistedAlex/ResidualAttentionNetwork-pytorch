@@ -106,7 +106,7 @@ parser.add_argument('--nepoch', type=int, default=6000, help='number of iteratio
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
-parser.add_argument('--output_dir', help='path to the outputdir', type=str, default="test/")
+parser.add_argument('--output_dir', help='path to the outputdir', type=str, default="logs/")
 parser.add_argument('--log_name', type=str, help='identifying name for storing tensorboard logs')
 
 
@@ -160,7 +160,7 @@ def main(args):
             tims = time.time()
             iter_i = 0
             logger.warning('epoch： ' + epoch)
-            print('epoch： ' + epoch)
+            print('epoch： ' + str(epoch))
             for sample in train_loader:
                 logger.warning('    iter： ' + iter_i)
                 print('    iter： ' + iter_i)
