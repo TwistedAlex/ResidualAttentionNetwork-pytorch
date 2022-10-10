@@ -126,6 +126,7 @@ def main(args):
             model.train()
             tims = time.time()
             iter_i = 0
+            print(len(train_loader))
             for sample in train_loader:
                 label_idx_list = sample['labels']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
@@ -142,10 +143,12 @@ def main(args):
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
+                print(loss.data[0])
+                exit(1)
                 # print("hello")
                 if (iter_i + 1) % 100 == 0:
                     print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.data[0]))
+                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.data[0].item()))
                 iter_i += 1
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
