@@ -139,6 +139,8 @@ def main(args):
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
                 outputs = model(images)
+                print(outputs)
+                print(labels)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
