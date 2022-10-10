@@ -144,8 +144,7 @@ def main(args):
                 loss.backward()
                 optimizer.step()
                 print(loss.shape)
-                print(loss)
-                print(loss.data[0].item())
+                print(loss.item())
                 exit(1)
                 # print("hello")
                 if (iter_i + 1) % 100 == 0:
