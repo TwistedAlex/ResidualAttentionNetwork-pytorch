@@ -80,7 +80,8 @@ parser.add_argument('--input_dir', help='path to the input idr', type=str)
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.5)
 parser.add_argument('--nepoch', type=int, default=6000, help='number of iterations per epoch')
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
-
+parser.add_argument('--masks_to_use', type=float, default=0.1,
+                    help='the relative number of masks to use in ex-supevision training')
 
 # Image Preprocessing
 def main(args):
