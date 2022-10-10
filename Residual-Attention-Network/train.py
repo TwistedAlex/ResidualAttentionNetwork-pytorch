@@ -56,7 +56,7 @@ def test(model, test_loader, btrain=False, model_file='model_92.pkl', device=tor
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
-        labels = torch.Tensor(label_idx_list).to(device)
+        labels = torch.Tensor(label_idx_list).to(device).long()
         outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
@@ -130,7 +130,7 @@ def main(args):
                 label_idx_list = sample['labels']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
-                labels = torch.Tensor(label_idx_list).to(device)
+                labels = torch.Tensor(label_idx_list).to(device).long()
 
                 # images = Variable(images.cuda())
                 # # print(images.data)
