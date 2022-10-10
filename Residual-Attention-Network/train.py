@@ -16,13 +16,16 @@ from dataloaders.deepfake_data import DeepfakeLoader
 # based https://github.com/liudaizong/Residual-Attention-Network
 from model.residual_attention_network import ResidualAttentionModel_92 as ResidualAttentionModel
 from utils.image import deepfake_preprocess_imagev2
+from metrics.metrics import save_roc_curve, save_roc_curve_with_threshold, roc_curve
+from sklearn.metrics import accuracy_score, average_precision_score
+import logging
+import pathlib
 
 
 model_file = 'model_92_sgd.pkl'
 classes = ('Neg', 'Pos')
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
-
 
 
 def my_collate(batch):
@@ -40,7 +43,7 @@ def my_collate(batch):
 
 
 # for test
-def test(model, test_loader, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
+def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
     # Test
     if not btrain:
         model.load_state_dict(torch.load(model_file))
@@ -51,7 +54,7 @@ def test(model, test_loader, btrain=False, model_file='model_92.pkl', device=tor
     #
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
-
+    y_true, y_pred = [], []
     for sample in test_loader:
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
@@ -67,11 +70,30 @@ def test(model, test_loader, btrain=False, model_file='model_92.pkl', device=tor
             label = labels.data[i]
             class_correct[label] += c[i]
             class_total[label] += 1
-
+        y_pred.extend(outputs.sigmoid().flatten().tolist())
+        y_true.extend(label_idx_list)
+    y_true, y_pred = np.array(y_true[:, 0]), np.array(y_pred[:, 0])
+    y_true2, y_pred2 = np.array(y_true[:, 1]), np.array(y_pred[:, 1])
     print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
     print('Accuracy of the model on the test images:', float(correct) / total)
+    logger.warning('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
+    logger.warning('Accuracy of the model on the test images:' + str(float(correct) / total))
+    ap = average_precision_score(y_true, y_pred)
+    fpr, tpr, auc, threshold = roc_curve(y_true, y_pred)
+    print('AP for Neg/real image:', ap)
+    logger.warning('AP for Neg/real image:' + str(ap))
+    print('AUC for Neg/real image:', auc)
+    logger.warning('AUC for Neg/real image:' + str(auc))
+    ap2 = average_precision_score(y_true2, y_pred2)
+    fpr2, tpr2, auc2, threshold2 = roc_curve(y_true2, y_pred2)
+    print('AP for Pos/fake image:', ap2)
+    logger.warning('AP for Pos/fake image:' + str(ap2))
+    print('AUC for Pos/fake image:', auc2)
+    logger.warning('AUC for Pos/fake image:' + str(auc2))
     for i in range(10):
         print('Accuracy of %5s : %2d %%' % (
+            classes[i], 100 * class_correct[i] / class_total[i]))
+        logger.warning('Accuracy of %5s : %2d %%' % (
             classes[i], 100 * class_correct[i] / class_total[i]))
     return correct / total
 
@@ -84,6 +106,8 @@ parser.add_argument('--nepoch', type=int, default=6000, help='number of iteratio
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
+parser.add_argument('--output_dir', help='path to the outputdir', type=str, default="test/")
+parser.add_argument('--log_name', type=str, help='identifying name for storing tensorboard logs')
 
 
 # Image Preprocessing
@@ -100,8 +124,17 @@ def main(args):
     test_transform = transforms.Compose([
         transforms.ToTensor()
     ])
+
+    pathlib.Path(args.output_dir + args.log_name + '/').mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(level=logging.DEBUG,
+                        filename=args.output_dir + args.log_name + '/' + "std.log",
+                        format='%(asctime)s %(message)s')
+    logger = logging.getLogger('PIL')
+    logger.setLevel(logging.WARNING)
     # when image is rgb, totensor do the division 255
     # Deepfake Dataset
+
+
     deepfake_loader = DeepfakeLoader(args.input_dir, [1 - args.batch_pos_dist, args.batch_pos_dist],
                                      batch_size=batch_size, steps_per_epoch=epoch_size,
                                      masks_to_use=args.masks_to_use, mean=mean, std=std,
@@ -126,8 +159,11 @@ def main(args):
             model.train()
             tims = time.time()
             iter_i = 0
-            print(len(train_loader))
+            logger.warning('epoch： ' + epoch)
+            print('epoch： ' + epoch)
             for sample in train_loader:
+                logger.warning('    iter： ' + iter_i)
+                print('    iter： ' + iter_i)
                 label_idx_list = sample['labels']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
@@ -143,26 +179,29 @@ def main(args):
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
-                print(loss.shape)
-                print(loss.item())
-                exit(1)
                 # print("hello")
                 if (iter_i + 1) % 100 == 0:
                     print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.data[0].item()))
+                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
+                    logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
+                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
-            acc = test(model, deepfake_loader.datasets['validation'], btrain=True, device=device)
+            logger.warning('the epoch takes time:' + str(time.time() - tims))
+            logger.warning('evaluate test set:')
+            acc = test(model, deepfake_loader.datasets['validation'], logger, btrain=True, device=device)
             if acc > acc_best:
                 acc_best = acc
                 print('current best acc,', acc_best)
+                logger.warning('current best acc,' + str(acc_best))
                 torch.save(model.state_dict(), model_file)
             # Decaying Learning Rate
             if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
                     epoch + 1) / float(total_epoch) == 0.9:
                 lr /= 10
                 print('reset learning rate to:', lr)
+                logger.warning('reset learning rate to:' + str(lr))
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr
                     print(param_group['lr'])
@@ -172,7 +211,7 @@ def main(args):
         torch.save(model.state_dict(), 'last_model_92_sgd.pkl')
 
     else:
-        test(model, deepfake_loader.datasets['test'], btrain=False, device=device)
+        test(model, deepfake_loader.datasets['test'], logger, btrain=False, device=device)
 
 
 if __name__ == '__main__':
