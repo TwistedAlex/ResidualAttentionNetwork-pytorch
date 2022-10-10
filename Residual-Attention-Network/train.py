@@ -143,7 +143,7 @@ def main(args):
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
-                print(loss.data[0])
+                print(loss.data[0].item())
                 exit(1)
                 # print("hello")
                 if (iter_i + 1) % 100 == 0:
