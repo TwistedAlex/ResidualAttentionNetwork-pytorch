@@ -15,6 +15,8 @@ from dataloaders.deepfake_data import DeepfakeLoader
 # from model.residual_attention_network_pre import ResidualAttentionModel
 # based https://github.com/liudaizong/Residual-Attention-Network
 from model.residual_attention_network import ResidualAttentionModel_92 as ResidualAttentionModel
+from utils.image import deepfake_preprocess_imagev2
+
 
 model_file = 'model_92_sgd.pkl'
 classes = ('Neg', 'Pos')
@@ -83,6 +85,7 @@ parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
 
+
 # Image Preprocessing
 def main(args):
     device = torch.device('cuda:' + str(args.deviceID))
@@ -102,7 +105,7 @@ def main(args):
     deepfake_loader = DeepfakeLoader(args.input_dir, [1 - args.batch_pos_dist, args.batch_pos_dist],
                                      batch_size=batch_size, steps_per_epoch=epoch_size,
                                      masks_to_use=args.masks_to_use, mean=mean, std=std,
-                                     transform=transform,
+                                     transform=deepfake_preprocess_imagev2,
                                      collate_fn=my_collate)
 
     model = ResidualAttentionModel().to(device)
