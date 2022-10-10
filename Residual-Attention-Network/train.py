@@ -143,6 +143,8 @@ def main(args):
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
+                print(loss.shape)
+                print(loss)
                 print(loss.data[0].item())
                 exit(1)
                 # print("hello")
