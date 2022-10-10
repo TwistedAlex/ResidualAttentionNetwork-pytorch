@@ -38,7 +38,7 @@ def my_collate(batch):
 
 
 # for test
-def test(model, test_loader, btrain=False, model_file='model_92.pkl', device):
+def test(model, test_loader, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
     # Test
     if not btrain:
         model.load_state_dict(torch.load(model_file))
