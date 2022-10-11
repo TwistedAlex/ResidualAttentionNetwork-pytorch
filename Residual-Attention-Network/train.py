@@ -70,8 +70,8 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         #     label = labels.data[i]
         #     class_correct[label] += c[i]
         #     class_total[label] += 1
-        y_pred.extend(outputs.sigmoid())
-        y_true.extend(label_idx_list)
+        y_pred.extend(outputs.sigmoid()[:, 0])
+        y_true.extend(labels[:, 0])
         print("*******")
         print(labels)
         print(labels.shape)
@@ -80,7 +80,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         print(outputs.sigmoid())
         print(len(outputs.sigmoid()))
         print(outputs.sigmoid().shape)
-        print(outputs.sigmoid()[:, 0])
+        print(outputs.sigmoid()[:, 0].flatten().tolist)
         print(outputs.sigmoid()[:, 1])
         print(y_pred)
         print(y_pred[:, 0])
