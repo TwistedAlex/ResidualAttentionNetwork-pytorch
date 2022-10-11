@@ -59,7 +59,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
-        labels = torch.Tensor(label_idx_list).to(device).long()
+        labels = torch.Tensor(label_idx_list).to(device).float().squeeze()
         outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
         # total += labels.size(0)
@@ -73,9 +73,11 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         y_pred.extend(outputs.sigmoid())
         y_true.extend(label_idx_list)
         print("*******")
-
+        print(labels)
+        print(labels.shape)
         print(label_idx_list)
         print(len(label_idx_list))
+        print(label_idx_list.shape)
         print(outputs.sigmoid())
         print(len(outputs.sigmoid()))
         print(y_pred)
