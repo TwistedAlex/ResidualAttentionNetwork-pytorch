@@ -72,6 +72,13 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         #     class_total[label] += 1
         y_pred.extend(outputs.sigmoid().flatten().tolist())
         y_true.extend(label_idx_list)
+        print("*******")
+        print(label_idx_list.shape)
+        print(label_idx_list)
+        print(outputs.sigmoid().flatten().tolist().shape)
+        print(outputs.sigmoid().flatten().tolist())
+        print(y_pred)
+        print(y_true)
     y_true, y_pred = np.array(y_true[:, 0]), np.array(y_pred[:, 0])
     y_true2, y_pred2 = np.array(y_true[:, 1]), np.array(y_pred[:, 1])
     # print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
@@ -193,6 +200,7 @@ def main(args):
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
+                break
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
