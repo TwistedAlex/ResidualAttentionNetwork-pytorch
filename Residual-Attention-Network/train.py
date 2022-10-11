@@ -73,10 +73,12 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         y_pred.extend(outputs.sigmoid().flatten().tolist())
         y_true.extend(label_idx_list)
         print("*******")
-        print(label_idx_list.shape)
+
         print(label_idx_list)
-        print(outputs.sigmoid().flatten().tolist().shape)
+        print(len(label_idx_list))
         print(outputs.sigmoid().flatten().tolist())
+        print(outputs.sigmoid().flatten().tolist().shape)
+
         print(y_pred)
         print(y_true)
     y_true, y_pred = np.array(y_true[:, 0]), np.array(y_pred[:, 0])
