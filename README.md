@@ -24,6 +24,13 @@ By Fei Wang, Mengqing Jiang, Chen Qian, Shuo Yang, Chen Li, Honggang Zhang, Xiao
 # how to train?
 first, download the data from http://www.cs.toronto.edu/~kriz/cifar.html
 make sure the varible 
+
+Add deepfake dataset adaption for ResidualAttentionModel_92 which has a input size limited to 224x224
+
+Training dataset:
+foldername/training/
+  Neg/: images from FFHQ dataset
+  Pos/: images from deepfake dataset, e.g. stylegan\stylegan2\stylegan3...
 # 
 is_train = True
 #
