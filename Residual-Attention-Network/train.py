@@ -204,7 +204,7 @@ def main(args):
                 acc_best = acc
                 print('current best acc,', acc_best)
                 logger.warning('current best acc,' + str(acc_best))
-                torch.save(model.state_dict(), args.out_dir + args.log_name + '/' + model_file)
+                torch.save(model.state_dict(), args.output_dir + args.log_name + '/' + model_file)
             # Decaying Learning Rate
             if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
                     epoch + 1) / float(total_epoch) == 0.9:
@@ -217,7 +217,7 @@ def main(args):
                 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
                 # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
         # Save the Model
-        torch.save(model.state_dict(), args.out_dir + args.log_name + '/last_model_92_sgd.pkl')
+        torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
 
     else:
         test(model, deepfake_loader.datasets['test'], logger, btrain=False, device=device)
