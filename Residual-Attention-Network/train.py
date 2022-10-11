@@ -85,7 +85,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         print(y_true)
         print(y_true.shape)
     y_true, y_pred = np.array(y_true), np.array(y_pred)
-    break
+    exit(1)
     y_true2, y_pred2 = np.array(y_true[:, 1]), np.array(y_pred[:, 1])
     # print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
     # print('Accuracy of the model on the test images:', float(correct) / total)
