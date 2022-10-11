@@ -62,40 +62,48 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         labels = torch.Tensor(label_idx_list).to(device).long()
         outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels.data).sum()
-        #
-        c = (predicted == labels.data).squeeze()
-        for i in range(20):
-            label = labels.data[i]
-            class_correct[label] += c[i]
-            class_total[label] += 1
+        # total += labels.size(0)
+        # correct += (predicted == labels).sum()
+        # #
+        # c = (predicted == labels).squeeze()
+        # for i in range(20):
+        #     label = labels.data[i]
+        #     class_correct[label] += c[i]
+        #     class_total[label] += 1
         y_pred.extend(outputs.sigmoid().flatten().tolist())
         y_true.extend(label_idx_list)
     y_true, y_pred = np.array(y_true[:, 0]), np.array(y_pred[:, 0])
     y_true2, y_pred2 = np.array(y_true[:, 1]), np.array(y_pred[:, 1])
-    print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
-    print('Accuracy of the model on the test images:', float(correct) / total)
-    logger.warning('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
-    logger.warning('Accuracy of the model on the test images:' + str(float(correct) / total))
+    # print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
+    # print('Accuracy of the model on the test images:', float(correct) / total)
+    # logger.warning('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
+    # logger.warning('Accuracy of the model on the test images:' + str(float(correct) / total))
     ap = average_precision_score(y_true, y_pred)
     fpr, tpr, auc, threshold = roc_curve(y_true, y_pred)
+
     print('AP for Neg/real image:', ap)
     logger.warning('AP for Neg/real image:' + str(ap))
     print('AUC for Neg/real image:', auc)
     logger.warning('AUC for Neg/real image:' + str(auc))
     ap2 = average_precision_score(y_true2, y_pred2)
     fpr2, tpr2, auc2, threshold2 = roc_curve(y_true2, y_pred2)
+    avgap = (ap2 + ap) / 2
+    avgAuc = (auc2 + auc) / 2
     print('AP for Pos/fake image:', ap2)
     logger.warning('AP for Pos/fake image:' + str(ap2))
     print('AUC for Pos/fake image:', auc2)
     logger.warning('AUC for Pos/fake image:' + str(auc2))
-    for i in range(10):
-        print('Accuracy of %5s : %2d %%' % (
-            classes[i], 100 * class_correct[i] / class_total[i]))
-        logger.warning('Accuracy of %5s : %2d %%' % (
-            classes[i], 100 * class_correct[i] / class_total[i]))
-    return correct / total
+    print('Avg AP:', avgap)
+    logger.warning('Avg AP:' + str(avgap))
+    print('Avg AUC:', str(avgAuc))
+    logger.warning('Avg AUC:' + str(avgAuc))
+
+    # for i in range(10):
+    #     print('Accuracy of %5s : %2d %%' % (
+    #         classes[i], 100 * class_correct[i] / class_total[i]))
+    #     logger.warning('Accuracy of %5s : %2d %%' % (
+    #         classes[i], 100 * class_correct[i] / class_total[i]))
+    return avgAuc  # correct / total
 
 
 parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
