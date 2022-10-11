@@ -70,14 +70,14 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         #     label = labels.data[i]
         #     class_correct[label] += c[i]
         #     class_total[label] += 1
-        y_pred.extend(outputs.sigmoid().flatten().tolist())
+        y_pred.extend(outputs.sigmoid().flatten())
         y_true.extend(label_idx_list)
         print("*******")
 
         print(label_idx_list)
         print(len(label_idx_list))
-        print(outputs.sigmoid().flatten().tolist())
-        print(outputs.sigmoid().flatten().tolist().shape)
+        print(outputs.sigmoid().flatten())
+        print(len(outputs.sigmoid().flatten().tolist()))
 
         print(y_pred)
         print(y_true)
