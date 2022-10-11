@@ -55,6 +55,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
+    y_true2, y_pred2 = [], []
     for sample in test_loader:
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
@@ -72,28 +73,22 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         #     class_total[label] += 1
         y_pred.extend(outputs.sigmoid()[:, 0].flatten().tolist())
         y_true.extend(labels[:, 0].flatten().tolist())
+        y_pred2.extend(outputs.sigmoid()[:, 1].flatten().tolist())
+        y_true2.extend(labels[:, 1].flatten().tolist())
         print("*******")
         print(labels)
-        print(labels.shape)
         print(outputs.sigmoid())
-        print(len(outputs.sigmoid()))
-        print(outputs.sigmoid().shape)
-        print(outputs.sigmoid()[:, 0].flatten().tolist())
-        print(outputs.sigmoid()[:, 1])
         print(y_pred)
-        print(y_pred.shape)
         print(y_true)
-        print(y_true.shape)
     y_true, y_pred = np.array(y_true), np.array(y_pred)
-    exit(1)
-    y_true2, y_pred2 = np.array(y_true[:, 1]), np.array(y_pred[:, 1])
+    y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
     # print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
     # print('Accuracy of the model on the test images:', float(correct) / total)
     # logger.warning('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
     # logger.warning('Accuracy of the model on the test images:' + str(float(correct) / total))
     ap = average_precision_score(y_true, y_pred)
     fpr, tpr, auc, threshold = roc_curve(y_true, y_pred)
-
+    exit(1)
     print('AP for Neg/real image:', ap)
     logger.warning('AP for Neg/real image:' + str(ap))
     print('AUC for Neg/real image:', auc)
