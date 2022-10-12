@@ -55,11 +55,8 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
-    y_true2, y_pred2 = [], []
-    count = 0
+    # y_true2, y_pred2 = [], []
     for sample in test_loader:
-        if count == 2:
-            break
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
@@ -78,13 +75,12 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         y_true.extend(labels[:, 0].flatten().tolist())
         y_pred.extend(outputs.sigmoid()[:, 1].flatten().tolist())
         y_true.extend(labels[:, 1].flatten().tolist())
-        count += 1
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     # y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
-    print("y_true")
-    print(y_true)
-    print("y_pred")
-    print(y_pred)
+    # print("y_true")
+    # print(y_true)
+    # print("y_pred")
+    # print(y_pred)
     # print("y_true2")
     # print(y_true2)
     # print("y_pred2")
@@ -111,14 +107,13 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     # logger.warning('Avg AP:' + str(avgap))
     # print('Avg AUC:', str(avgAuc))
     # logger.warning('Avg AUC:' + str(avgAuc))
-    exit(1)
 
     # for i in range(10):
     #     print('Accuracy of %5s : %2d %%' % (
     #         classes[i], 100 * class_correct[i] / class_total[i]))
     #     logger.warning('Accuracy of %5s : %2d %%' % (
     #         classes[i], 100 * class_correct[i] / class_total[i]))
-    return avgAuc  # correct / total
+    return auc  # correct / total
 
 
 parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
@@ -212,7 +207,6 @@ def main(args):
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
-                break
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
