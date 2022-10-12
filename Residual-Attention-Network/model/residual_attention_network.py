@@ -100,41 +100,40 @@ class ResidualAttentionModel_92(nn.Module):
         self.fc = nn.Linear(2048,2)
 
     def forward(self, x):
-        print(x.shape)
+        # print(x.shape)  # 3, 224, 224
         out = self.conv1(x)
-        print(out.shape)
+        # print(out.shape)  # 64, 112, 112
         out = self.mpool1(out)
-        print(out.shape)
+        # print(out.shape)  # 64, 56, 56
         # print(out.data)
         out = self.residual_block1(out)
-        print(out.shape)
+        # print(out.shape)  # 256, 56, 56
         out = self.attention_module1(out)
-        print(out.shape)
+        # print(out.shape)  # 256, 56, 56
         out = self.residual_block2(out)
-        print(out.shape)
+        # print(out.shape)  # 512, 28, 28
         out = self.attention_module2(out)
         out = self.attention_module2_2(out)
-        print(out.shape)
+        # print(out.shape)  # 512, 28, 28
         out = self.residual_block3(out)
-        print(out.shape)
+        # print(out.shape)  # 1024, 14, 14
         # print(out.data)
         out = self.attention_module3(out)
         out = self.attention_module3_2(out)
         out = self.attention_module3_3(out)
-        print(out.shape)
+        # print(out.shape)  # 1024, 14, 14
         out = self.residual_block4(out)
-        print(out.shape)
+        # print(out.shape)  # 2048, 7, 7
         out = self.residual_block5(out)
-        print(out.shape)
+        # print(out.shape)  # 2048, 7, 7
         out = self.residual_block6(out)
-        print(out.shape)
+        # print(out.shape)  # 2048, 7, 7
         out = self.mpool2(out)
-        print(out.shape)
+        # print(out.shape)  # 2048, 1, 1
         out = out.view(out.size(0), -1)
-        print(out.shape)
+        # print(out.shape)  # 2048
         out = self.fc(out)
-        print(out.shape)
-        exit(1)
+        # print(out.shape)  # 2
 
         return out
 
