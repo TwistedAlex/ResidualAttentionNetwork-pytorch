@@ -194,10 +194,6 @@ def main(args):
                 optimizer.zero_grad()
                 outputs = model(images)
                 loss = criterion(outputs, labels)
-                print("outputs")
-                print(outputs)
-                print("labels")
-                print(labels)
                 loss.backward()
                 optimizer.step()
                 # print("hello")
@@ -214,6 +210,10 @@ def main(args):
             acc = test(model, deepfake_loader.datasets['validation'], logger, btrain=True, device=device)
             if acc > acc_best:
                 acc_best = acc
+                print("***************************************")
+                logger.warning("***************************************")
+                print(' epoch: ', str(epoch))
+                logger.warning(' epoch: ' + str(epoch))
                 print('current best acc,', acc_best)
                 logger.warning('current best acc,' + str(acc_best))
                 torch.save(model.state_dict(), args.output_dir + args.log_name + '/' + model_file)
