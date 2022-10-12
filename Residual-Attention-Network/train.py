@@ -56,7 +56,10 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
     y_true2, y_pred2 = [], []
+    count = 0
     for sample in test_loader:
+        if count == 2:
+            break
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
@@ -75,8 +78,17 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         y_true.extend(labels[:, 0].flatten().tolist())
         y_pred2.extend(outputs.sigmoid()[:, 1].flatten().tolist())
         y_true2.extend(labels[:, 1].flatten().tolist())
+        count += 1
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
+    print("y_true")
+    print(y_true)
+    print("y_pred")
+    print(y_pred)
+    print("y_true2")
+    print(y_true2)
+    print("y_pred2")
+    print(y_pred2)
     # print('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
     # print('Accuracy of the model on the test images:', float(correct) / total)
     # logger.warning('Accuracy of the model on the test images: %d %%' % (100 * float(correct) / total))
@@ -99,6 +111,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     logger.warning('Avg AP:' + str(avgap))
     print('Avg AUC:', str(avgAuc))
     logger.warning('Avg AUC:' + str(avgAuc))
+    exit(1)
 
     # for i in range(10):
     #     print('Accuracy of %5s : %2d %%' % (
