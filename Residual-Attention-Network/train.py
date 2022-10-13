@@ -174,7 +174,7 @@ def main(args):
     model = ResidualAttentionModel().to(device)
 
     lr = 0.1  # 0.1
-    criterion = nn.BCELoss  # nn.CrossEntropyLoss()
+    criterion = nn.BCEWithLogitsLoss  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
     is_train = True
     is_pretrain = False
