@@ -56,13 +56,17 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
     # y_true2, y_pred2 = [], []
+    count = 0
     for sample in test_loader:
+        if count == 2:
+            break
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
         labels = torch.Tensor(label_idx_list).to(device).float().squeeze()
         outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
+        # _, predicted = torch.max(outputs.data, 1)
+        # original logic:
         # total += labels.size(0)
         # correct += (predicted == labels).sum()
         # #
@@ -71,16 +75,23 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         #     label = labels.data[i]
         #     class_correct[label] += c[i]
         #     class_total[label] += 1
-        y_pred.extend(outputs.sigmoid()[:, 0].flatten().tolist())
-        y_true.extend(labels[:, 0].flatten().tolist())
-        y_pred.extend(outputs.sigmoid()[:, 1].flatten().tolist())
-        y_true.extend(labels[:, 1].flatten().tolist())
+        # Version 1: output size 1
+        print(outputs.sigmoid().flatten().tolist())
+        print(labels.flatten().tolist())
+        y_pred.extend(outputs.sigmoid().flatten().tolist())
+        y_true.extend(labels.flatten().tolist())
+        # Version 2: output size 2
+        # y_pred.extend(outputs.sigmoid()[:, 0].flatten().tolist())
+        # y_true.extend(labels[:, 0].flatten().tolist())
+        # y_pred.extend(outputs.sigmoid()[:, 1].flatten().tolist())
+        # y_true.extend(labels[:, 1].flatten().tolist())
+        count += 1
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     # y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
-    # print("y_true")
-    # print(y_true)
-    # print("y_pred")
-    # print(y_pred)
+    print("y_true")
+    print(y_true)
+    print("y_pred")
+    print(y_pred)
     # print("y_true2")
     # print(y_true2)
     # print("y_pred2")
@@ -91,10 +102,11 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     # logger.warning('Accuracy of the model on the test images:' + str(float(correct) / total))
     ap = average_precision_score(y_true, y_pred)
     fpr, tpr, auc, threshold = roc_curve(y_true, y_pred)
-    print('AP for Neg/real image:', ap)
-    logger.warning('AP for Neg/real image:' + str(ap))
-    print('AUC for Neg/real image:', auc)
-    logger.warning('AUC for Neg/real image:' + str(auc))
+    print('AP :', ap)
+    logger.warning('AP :' + str(ap))
+    print('AUC :', auc)
+    logger.warning('AUC :' + str(auc))
+    exit(1)
     # ap2 = average_precision_score(y_true2, y_pred2)
     # fpr2, tpr2, auc2, threshold2 = roc_curve(y_true2, y_pred2)
     # avgap = (ap2 + ap) / 2
@@ -162,7 +174,7 @@ def main(args):
     model = ResidualAttentionModel().to(device)
 
     lr = 0.1  # 0.1
-    criterion = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
     is_train = True
     is_pretrain = False
@@ -203,6 +215,7 @@ def main(args):
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
+                break
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))

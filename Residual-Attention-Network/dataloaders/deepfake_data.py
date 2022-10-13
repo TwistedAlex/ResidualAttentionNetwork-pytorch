@@ -32,7 +32,7 @@ def build_balanced_dataloader(dataset, labels, collate_fn, target_weight=None, b
 
 
 def load_func(path, file, all_files):
-    label = [1, 0] if 'Neg' in path else [0, 1]
+    label = 0 if 'Neg' in path else 1
     source = 'ffhq' if label == 0 else 'psi_1' if 'psi1' in file else 'psi_0.5'
     path_to_file = os.path.join(path, file)
     p_image = PIL.Image.open(path_to_file)
