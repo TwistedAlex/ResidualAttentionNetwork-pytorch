@@ -174,7 +174,7 @@ def main(args):
     model = ResidualAttentionModel().to(device)
 
     lr = 0.1  # 0.1
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCELoss  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
     is_train = True
     is_pretrain = False
@@ -197,7 +197,7 @@ def main(args):
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
                 labels = torch.Tensor(label_idx_list).to(device).long()
-                # print(labels.squeeze(1).shape)
+                print(labels.shape)
 
                 # images = Variable(images.cuda())
                 # # print(images.data)
@@ -206,8 +206,8 @@ def main(args):
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
                 outputs = model(images)
-                print(outputs.shape)
-                loss = criterion(outputs, labels)
+                print(outputs.squeeze().shape)
+                loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
                 optimizer.step()
                 # print("hello")
