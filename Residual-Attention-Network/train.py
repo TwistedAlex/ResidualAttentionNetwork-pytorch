@@ -197,7 +197,8 @@ def main(args):
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
                 labels = torch.Tensor(label_idx_list).to(device).long()
-
+                print(labels)
+                print(outputs)
                 # images = Variable(images.cuda())
                 # # print(images.data)
                 # labels = Variable(labels.cuda())
