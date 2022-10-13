@@ -207,7 +207,7 @@ def main(args):
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
                 outputs = model(images)
-                print(outputs)
+                print(outputs.unsqueeze(1))
                 print(outputs.squeeze().shape)
                 loss = criterion(outputs.squeeze(), labels)
                 print(loss.shape)
