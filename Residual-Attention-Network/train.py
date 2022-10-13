@@ -210,7 +210,7 @@ def main(args):
                 outputs = model(images)
                 print(outputs)
                 print(outputs.shape)
-                loss = criterion(outputs, labels.reshape(-1,1))
+                loss = criterion(outputs, labels)
                 print(loss.shape)
                 loss.backward()
                 optimizer.step()
