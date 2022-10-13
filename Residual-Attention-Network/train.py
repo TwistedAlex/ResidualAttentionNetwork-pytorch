@@ -196,7 +196,7 @@ def main(args):
                 label_idx_list = sample['labels']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
-                labels = torch.Tensor(label_idx_list).to(device).float()
+                labels = torch.Tensor(label_idx_list).to(device)
                 print(labels)
                 print(labels.shape)
                 print(labels.reshape(-1,1).shape)
@@ -211,6 +211,7 @@ def main(args):
                 print(outputs)
                 print(outputs.shape)
                 loss = criterion(outputs, labels.reshape(-1,1))
+                print(loss.shape)
                 loss.backward()
                 optimizer.step()
                 # print("hello")
