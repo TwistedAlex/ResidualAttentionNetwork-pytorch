@@ -199,7 +199,6 @@ def main(args):
                 labels = torch.Tensor(label_idx_list).to(device)
                 print(labels)
                 print(labels.shape)
-                print(labels.reshape(-1,1).shape)
 
                 # images = Variable(images.cuda())
                 # # print(images.data)
@@ -209,8 +208,8 @@ def main(args):
                 optimizer.zero_grad()
                 outputs = model(images)
                 print(outputs)
-                print(outputs.shape)
-                loss = criterion(outputs, labels)
+                print(outputs.squeeze().shape)
+                loss = criterion(outputs.squeeze(), labels)
                 print(loss.shape)
                 loss.backward()
                 optimizer.step()
