@@ -1,3 +1,4 @@
+from torch.utils.tensorboard import SummaryWriter
 from __future__ import print_function, division
 import torch
 import torch.nn as nn
@@ -21,7 +22,6 @@ from sklearn.metrics import accuracy_score, average_precision_score
 import logging
 import pathlib
 import sys
-from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
 
