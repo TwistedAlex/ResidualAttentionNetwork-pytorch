@@ -56,10 +56,10 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
     # y_true2, y_pred2 = [], []
-    count = 0
+    # count = 0
     for sample in test_loader:
-        if count == 2:
-            break
+        # if count == 2:
+        #     break
         label_idx_list = sample['labels']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
@@ -76,8 +76,8 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         #     class_correct[label] += c[i]
         #     class_total[label] += 1
         # Version 1: output size 1
-        print(outputs.sigmoid().flatten().tolist())
-        print(labels.flatten().tolist())
+        # print(outputs.sigmoid().flatten().tolist())
+        # print(labels.flatten().tolist())
         y_pred.extend(outputs.sigmoid().flatten().tolist())
         y_true.extend(labels.flatten().tolist())
         # Version 2: output size 2
@@ -85,13 +85,13 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         # y_true.extend(labels[:, 0].flatten().tolist())
         # y_pred.extend(outputs.sigmoid()[:, 1].flatten().tolist())
         # y_true.extend(labels[:, 1].flatten().tolist())
-        count += 1
+        # count += 1
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     # y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
-    print("y_true")
-    print(y_true)
-    print("y_pred")
-    print(y_pred)
+    # print("y_true")
+    # print(y_true)
+    # print("y_pred")
+    # print(y_pred)
     # print("y_true2")
     # print(y_true2)
     # print("y_pred2")
@@ -106,7 +106,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     logger.warning('AP :' + str(ap))
     print('AUC :', auc)
     logger.warning('AUC :' + str(auc))
-    exit(1)
+    # exit(1)
     # ap2 = average_precision_score(y_true2, y_pred2)
     # fpr2, tpr2, auc2, threshold2 = roc_curve(y_true2, y_pred2)
     # avgap = (ap2 + ap) / 2
@@ -205,7 +205,7 @@ def main(args):
                 optimizer.zero_grad()
                 outputs = model(images)
                 loss = criterion(outputs.squeeze(), labels)
-                print(loss)
+                # print(loss)
                 loss.backward()
                 optimizer.step()
                 # print("hello")
