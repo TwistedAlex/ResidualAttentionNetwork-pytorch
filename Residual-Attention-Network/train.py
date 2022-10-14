@@ -232,7 +232,7 @@ def main(args):
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
             logger.warning('evaluate test set:')
-            acc = test(model, deepfake_loader.datasets['testing'], logger, btrain=True, device=device)
+            acc = test(model, deepfake_loader.datasets['test'], logger, btrain=True, device=device)
             if acc > acc_best:
                 acc_best = acc
                 print("***************************************")
