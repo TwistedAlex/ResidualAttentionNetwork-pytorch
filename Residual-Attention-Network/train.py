@@ -46,7 +46,7 @@ def my_collate(batch):
 
 
 # for test
-def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
+def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
     # Test
     if not btrain:
         model.load_state_dict(torch.load(model_file))
@@ -58,7 +58,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
-    y_pred2 = []
+    # y_pred2 = []
     # y_true2, y_pred2 = [], []
     # count = 0
     for sample in test_loader:
@@ -82,7 +82,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         # Version 1: output size 1
         # print(outputs.sigmoid().flatten().tolist())
         # print(labels.flatten().tolist())
-        y_pred2.extend(outputs.flatten().tolist())
+        # y_pred2.extend(outputs.flatten().tolist())
         y_pred.extend(outputs.sigmoid().flatten().tolist())
         y_true.extend(labels.flatten().tolist())
         # Version 2: output size 2
@@ -93,12 +93,12 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         # count += 1
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     # y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
-    print("y_true")
-    print(y_true)
-    print("y_pred")
-    print(y_pred)
-    print("y_pred2")
-    print(y_pred2)
+    # print("y_true")
+    # print(y_true)
+    # print("y_pred")
+    # print(y_pred)
+    # print("y_pred2")
+    # print(y_pred2)
     # print("y_true2")
     # print(y_true2)
     # print("y_pred2")
@@ -117,6 +117,12 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     f_acc = accuracy_score(y_true[y_true == 1], y_pred[y_true == 1] > 0.5)
     logger.warning('r_acc :' + str(r_acc))
     logger.warning('f_acc :' + str(f_acc))
+    writer.add_scalar('Loss/train/AP',
+                      ap,
+                      epoch)
+    writer.add_scalar('Loss/train/AUC',
+                      auc,
+                      epoch)
     # exit(1)
     # ap2 = average_precision_score(y_true2, y_pred2)
     # fpr2, tpr2, auc2, threshold2 = roc_curve(y_true2, y_pred2)
@@ -196,7 +202,7 @@ def main(args):
     is_train = True
     is_pretrain = False
     acc_best = 0
-    total_epoch = 20
+    total_epoch = 50
     train_loader = deepfake_loader.datasets['train']
     if is_train is True:
         if is_pretrain == True:
@@ -237,8 +243,8 @@ def main(args):
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
-                if iter_i == 10:
-                    break
+                # if iter_i == 10:
+                #     break
                 # break
             writer.add_scalar('Loss/train/cl_loss_per_epoch',
                               total_losses / (iter_i * args.batchsize),
@@ -247,7 +253,7 @@ def main(args):
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
             logger.warning('evaluate test set:')
-            acc = test(model, deepfake_loader.datasets['test'], logger, btrain=True, device=device)
+            acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
             if acc > acc_best:
                 acc_best = acc
                 print("***************************************")
@@ -272,7 +278,7 @@ def main(args):
         torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
 
     else:
-        test(model, deepfake_loader.datasets['test'], logger, btrain=False, device=device)
+        test(model, deepfake_loader.datasets['test'], logger, writer, 0, btrain=False, device=device)
 
 
 if __name__ == '__main__':
