@@ -1,5 +1,4 @@
 from torch.utils.tensorboard import SummaryWriter
-from __future__ import print_function, division
 import torch
 import torch.nn as nn
 import torch.optim as optim
