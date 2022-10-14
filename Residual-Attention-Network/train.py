@@ -20,8 +20,10 @@ from metrics.metrics import save_roc_curve, save_roc_curve_with_threshold, roc_c
 from sklearn.metrics import accuracy_score, average_precision_score
 import logging
 import pathlib
+import sys
 
 
+np.set_printoptions(threshold=sys.maxsize)
 model_file = 'model_92_sgd.pkl'
 classes = ('Neg', 'Pos')
 mean = [0.485, 0.456, 0.406]
@@ -55,6 +57,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
     y_true, y_pred = [], []
+    y_pred2 = []
     # y_true2, y_pred2 = [], []
     # count = 0
     for sample in test_loader:
@@ -78,6 +81,7 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         # Version 1: output size 1
         # print(outputs.sigmoid().flatten().tolist())
         # print(labels.flatten().tolist())
+        y_pred2.extend(outputs.flatten().tolist())
         y_pred.extend(outputs.sigmoid().flatten().tolist())
         y_true.extend(labels.flatten().tolist())
         # Version 2: output size 2
@@ -92,6 +96,8 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
     print(y_true)
     print("y_pred")
     print(y_pred)
+    print("y_pred2")
+    print(y_pred2)
     # print("y_true2")
     # print(y_true2)
     # print("y_pred2")
