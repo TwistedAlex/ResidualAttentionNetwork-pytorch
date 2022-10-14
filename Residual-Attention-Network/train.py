@@ -88,10 +88,10 @@ def test(model, test_loader, logger, btrain=False, model_file='model_92.pkl', de
         # count += 1
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     # y_true2, y_pred2 = np.array(y_true2), np.array(y_pred2)
-    # print("y_true")
-    # print(y_true)
-    # print("y_pred")
-    # print(y_pred)
+    print("y_true")
+    print(y_true)
+    print("y_pred")
+    print(y_pred)
     # print("y_true2")
     # print(y_true2)
     # print("y_pred2")
@@ -219,6 +219,8 @@ def main(args):
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
+                if iter_i == 10:
+                    break
                 # break
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
