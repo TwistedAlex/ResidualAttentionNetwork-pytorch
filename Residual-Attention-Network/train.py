@@ -150,7 +150,8 @@ parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
 parser.add_argument('--output_dir', help='path to the outputdir', type=str, default="logs/")
 parser.add_argument('--log_name', type=str, help='identifying name for storing tensorboard logs')
-
+parser.add_argument('--writer_file_load', type=str, default='',
+                    help='a full path including the name of the writer_file to load from, empty otherwise')
 
 # Image Preprocessing
 def main(args):
