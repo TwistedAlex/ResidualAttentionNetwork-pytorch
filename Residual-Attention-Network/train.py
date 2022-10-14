@@ -21,6 +21,8 @@ from sklearn.metrics import accuracy_score, average_precision_score
 import logging
 import pathlib
 import sys
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
 
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -152,6 +154,11 @@ parser.add_argument('--log_name', type=str, help='identifying name for storing t
 
 # Image Preprocessing
 def main(args):
+    if len(args.writer_file_load) > 1:
+        writer = SummaryWriter(args.output_dir + args.writer_file_load)
+    else:
+        writer = SummaryWriter(args.output_dir + args.log_name + '/' + 'logs_' +
+                               datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     device = torch.device('cuda:' + str(args.deviceID))
     batch_size = args.batchsize
     epoch_size = args.nepoch
@@ -189,7 +196,7 @@ def main(args):
     is_train = True
     is_pretrain = False
     acc_best = 0
-    total_epoch = 300
+    total_epoch = 20
     train_loader = deepfake_loader.datasets['train']
     if is_train is True:
         if is_pretrain == True:
@@ -199,6 +206,7 @@ def main(args):
             model.train()
             tims = time.time()
             iter_i = 0
+            total_losses = 0
             logger.warning('epoch： ' + str(epoch))
             print('epoch： ' + str(epoch))
             for sample in train_loader:
@@ -214,11 +222,15 @@ def main(args):
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
                 outputs = model(images)
-                loss = criterion(outputs.squeeze(), labels)
+                loss = criterion(outputs, labels.unsqueeze(1).float())
                 # print(loss)
                 loss.backward()
                 optimizer.step()
                 # print("hello")
+                total_losses += loss.detach().cpu().item()
+                writer.add_scalar('Loss/train/cl_loss_per_iter',
+                                  loss.detach().cpu().item(),
+                                  iter_i)
                 if (iter_i + 1) % 100 == 0:
                     print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
@@ -228,6 +240,9 @@ def main(args):
                 if iter_i == 10:
                     break
                 # break
+            writer.add_scalar('Loss/train/cl_loss_per_epoch',
+                              total_losses / (iter_i * args.batchsize),
+                              epoch)
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
