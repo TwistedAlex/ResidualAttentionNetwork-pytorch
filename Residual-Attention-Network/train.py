@@ -219,7 +219,7 @@ def main(args):
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
-                break
+                # break
             print('the epoch takes time:', time.time() - tims)
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
