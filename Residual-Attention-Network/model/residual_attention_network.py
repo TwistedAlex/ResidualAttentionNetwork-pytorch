@@ -306,11 +306,8 @@ class ResidualAttentionModel_92(nn.Module):
         out = self.residual_block1(out)
         # print(out.shape)  # 256, 56, 56
         out = self.attention_module1(out)
-        print(out.shape[0])
-
         if self.output_intermediate:
             process_intermediate(out, filename_list, "stage1.png", out.shape[0], 256, output_dir, output_num)
-
         # print(out.shape)  # 256, 56, 56
         out = self.residual_block2(out)
         # print(out.shape)  # 512, 28, 28
@@ -347,7 +344,6 @@ class ResidualAttentionModel_92(nn.Module):
         # print(out.shape)  # 2048
         out = self.fc(out)
         # print(out.shape)  # 1
-        exit(1)
         return out
 
 
