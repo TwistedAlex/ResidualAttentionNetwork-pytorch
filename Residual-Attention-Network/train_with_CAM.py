@@ -313,6 +313,8 @@ def main(args):
                                 last_ex_epoch=int(total_epoch - 1))
 
     if is_train is True:
+        epoch_train_cl_loss, epoch_train_am_loss, epoch_train_ex_loss, epoch_train_em_loss = 0, 0, 0, 0
+        count_pos, count_neg, c_psi1, c_psi05, c_ffhq, dif_i, am_count, ex_count = 0, 0, 0, 0, 0, 0, 0, 0
         if len(args.checkpoint_file_path_load) > 0:
             checkpoint = torch.load(args.checkpoint_file_path_load, map_location='cpu')
             model.load_state_dict(checkpoint['model_state_dict'], strict=False)
