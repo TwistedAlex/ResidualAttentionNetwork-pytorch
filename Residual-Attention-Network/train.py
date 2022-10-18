@@ -180,7 +180,8 @@ def main(args):
     test_transform = transforms.Compose([
         transforms.ToTensor()
     ])
-
+    intermediate_output_dir = args.output_dir + "intermediate_output" + '/'
+    pathlib.Path(intermediate_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(args.output_dir + args.log_name + '/').mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.DEBUG,
                         filename=args.output_dir + args.log_name + '/' + "std.log",
@@ -236,7 +237,7 @@ def main(args):
 
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
-                outputs = model(images, filename_list=filename_list)
+                outputs = model(images, output_intermediate=True, filename_list=filename_list, output_dir=intermediate_output_dir)
                 loss = criterion(outputs, labels.unsqueeze(1).float())
                 # print(loss)
                 loss.backward()

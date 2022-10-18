@@ -249,6 +249,14 @@ class batch_RAN_Deepfake(nn.Module):
         return self.enable_ex
 
 
+def output_intermediate(input_tensor, filename_list, suffix, batch_size, channel_size, output_num):
+    candidates = random.sample(range(channel_size), output_num)
+    for batch_idx in range(batch_size):
+        for channel_idx in candidates:
+            PIL.Image.fromarray((input_tensor[batch_idx][channel_idx].squeeze().cpu().detach().numpy()).round().astype(
+                np.uint8), 'L').save(filename_list[batch_idx] + "_" + str(channel_idx) + "_" + suffix)
+
+
 class ResidualAttentionModel_92(nn.Module):
     # for input size 224
     def __init__(self):
@@ -285,7 +293,7 @@ class ResidualAttentionModel_92(nn.Module):
         self.avgpool = nn.AvgPool2d(kernel_size=7, stride=1)
         self.fc = nn.Linear(2048,1)
 
-    def forward(self, x, filename_list=None, output_intermediate=False, output_num=3, output_dir="/home/shuoli/"):
+    def forward(self, x, output_intermediate=False, filename_list=None, output_dir="/home/shuoli/", output_num=3):
         # print(x.shape)  # 3, 224, 224
         self.output_intermediate = output_intermediate
         self.output_num = output_num
@@ -298,26 +306,33 @@ class ResidualAttentionModel_92(nn.Module):
         out = self.residual_block1(out)
         # print(out.shape)  # 256, 56, 56
         out = self.attention_module1(out)
-        print(out.shape)
-        exit(1)
+        print(out.shape[0])
+
         if self.output_intermediate:
-            candidates = random.sample(range(256), self.output_num)
-            for channel_idx in candidates:
-                PIL.Image.fromarray((out[channel_idx].squeeze().cpu().detach().numpy()).round().astype(
-                    np.uint8), 'L').save("stage1.png")
+            output_intermediate(out, filename_list, "stage1.png", out.shape[0], 256, output_num)
 
         # print(out.shape)  # 256, 56, 56
         out = self.residual_block2(out)
         # print(out.shape)  # 512, 28, 28
         out = self.attention_module2(out)
+        if self.output_intermediate:
+            output_intermediate(out, filename_list, "stage2_1.png", out.shape[0], 512, output_num)
         out = self.attention_module2_2(out)
+        if self.output_intermediate:
+            output_intermediate(out, filename_list, "stage2_2.png", out.shape[0], 512, output_num)
         # print(out.shape)  # 512, 28, 28
         out = self.residual_block3(out)
         # print(out.shape)  # 1024, 14, 14
         # print(out.data)
         out = self.attention_module3(out)
+        if self.output_intermediate:
+            output_intermediate(out, filename_list, "stage3_1.png", out.shape[0], 1024, output_num)
         out = self.attention_module3_2(out)
+        if self.output_intermediate:
+            output_intermediate(out, filename_list, "stage3_2.png", out.shape[0], 1024, output_num)
         out = self.attention_module3_3(out)
+        if self.output_intermediate:
+            output_intermediate(out, filename_list, "stage3_3.png", out.shape[0], 1024, output_num)
         # print(out.shape)  # 1024, 14, 14
         out = self.residual_block4(out)
         # print(out.shape)  # 2048, 7, 7
@@ -332,7 +347,7 @@ class ResidualAttentionModel_92(nn.Module):
         # print(out.shape)  # 2048
         out = self.fc(out)
         # print(out.shape)  # 1
-
+        exit(1)
         return out
 
 
