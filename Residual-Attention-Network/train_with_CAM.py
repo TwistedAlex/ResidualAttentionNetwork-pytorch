@@ -148,10 +148,11 @@ def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='mo
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
         labels = torch.Tensor(label_idx_list).to(device).float().squeeze()
+        lbs = torch.Tensor(label_idx_list).to(device).long().unsqueeze(1).float()
         if len(test_intermediate_output_dir) == 0:
-            outputs, heatmaps = model(images)
+            outputs, heatmaps = model(images, lbs)
         else:
-            outputs, heatmaps = model(images, output_intermediate=True, filename_list=filename_list,
+            outputs, heatmaps = model(images, lbs, output_intermediate=True, filename_list=filename_list,
                             output_dir=test_intermediate_output_dir)
         # _, predicted = torch.max(outputs.data, 1)
         # original logic:
@@ -341,10 +342,10 @@ def main(args):
                 # images = Variable(images.cuda())
                 # # print(images.data)
                 # labels = Variable(labels.cuda())
-
+                lbs = torch.Tensor(label_idx_list).to(device).long().unsqueeze(1).float()
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
-                outputs, heatmaps = model(images)
+                outputs, heatmaps = model(images, lbs)
                 loss = criterion(outputs, labels.unsqueeze(1).float())
                 # print(loss)
 
@@ -373,7 +374,7 @@ def main(args):
                 total_iter_i += 1
                 # if iter_i == 10:
                 #     break
-                # break
+                break
             writer.add_scalar('Loss/train/cl_loss_per_epoch',
                               total_losses / (iter_i * args.batchsize),
                               epoch)
@@ -411,6 +412,7 @@ def main(args):
                     print(param_group['lr'])
                 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
                 # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
+            break
         # Save the Model
         # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
         torch.save({

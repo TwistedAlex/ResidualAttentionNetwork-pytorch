@@ -181,8 +181,7 @@ class batch_RAN_Deepfake(nn.Module):
 
         return ohe
 
-    def forward(self, images, labels, train_flag=False, image_with_masks=None,
-                e_masks=None, has_mask_indexes=None):  # TODO: no need for saving the hook results ; Put Nan
+    def forward(self, images, labels, output_intermediate=False, filename_list=None, output_dir="/home/shuoli/", output_num=3):  # TODO: no need for saving the hook results ; Put Nan
 
         # Remember, only do back-probagation during the training. During the validation, it will be affected by bachnorm
         # dropout, etc. It leads to unstable validation score. It is better to visualize attention maps at the testset
@@ -194,8 +193,11 @@ class batch_RAN_Deepfake(nn.Module):
             # labels_ohe.requires_grad = True
 
             _, _, img_h, img_w = images.size()
-
-            logits_cl = self.model(images)  # BS x num_classes
+            if output_intermediate:
+                logits_cl = self.model(images, labels, output_intermediate=output_intermediate,
+                                       filename_list=filename_list, output_dir=output_dir, output_num=output_num)
+            else:
+                logits_cl = self.model(images, labels)  # BS x num_classes
             self.model.zero_grad()
 
             if not is_train:
