@@ -246,7 +246,7 @@ def main(args):
 
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
-                outputs = model(images, output_intermediate=True, filename_list=filename_list, output_dir=intermediate_output_dir)
+                outputs = model(images)
                 loss = criterion(outputs, labels.unsqueeze(1).float())
                 # print(loss)
                 loss.backward()
@@ -273,7 +273,7 @@ def main(args):
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
             logger.warning('evaluate test set:')
-            if epoch == total_epoch - 1:
+            if epoch == 0:
                 acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
                            test_intermediate_output_dir=test_intermediate_output_dir)
             else:
