@@ -157,6 +157,9 @@ parser.add_argument('--output_dir', help='path to the outputdir', type=str, defa
 parser.add_argument('--log_name', type=str, help='identifying name for storing tensorboard logs')
 parser.add_argument('--writer_file_load', type=str, default='',
                     help='a full path including the name of the writer_file to load from, empty otherwise')
+parser.add_argument('--checkpoint_file_path_load', type=str, default='',
+                    help='a full path including the name of the checkpoint_file to load from, empty otherwise')
+parser.add_argument('--lr', default=0.0001, type=float, help='initial learning rate')
 
 # Image Preprocessing
 def main(args):
@@ -196,19 +199,24 @@ def main(args):
 
     model = ResidualAttentionModel().to(device)
 
-    lr = 0.1  # 0.1
+    lr = args.lr
     criterion = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
     is_train = True
     is_pretrain = False
     acc_best = 0
     total_epoch = 50
+    init_epoch = 0
     train_loader = deepfake_loader.datasets['train']
     if is_train is True:
-        if is_pretrain == True:
-            model.load_state_dict((torch.load(model_file)))
+        if len(args.checkpoint_file_path_load) > 0:
+            checkpoint = torch.load(args.checkpoint_file_path_load, map_location='cpu')
+            model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            init_epoch = checkpoint['epoch'] + 1
+            # model.load_state_dict((torch.load(model_file)))
         # Training
-        for epoch in range(total_epoch):
+        for epoch in range(init_epoch, total_epoch):
             model.train()
             tims = time.time()
             iter_i = 0
@@ -218,6 +226,7 @@ def main(args):
             for sample in train_loader:
                 logger.warning('    iter： ' + str(iter_i))
                 label_idx_list = sample['labels']
+                filename_list = sample['filename']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
                 labels = torch.Tensor(label_idx_list).to(device)
@@ -227,7 +236,7 @@ def main(args):
 
                 # Forward + Backward + Optimize
                 optimizer.zero_grad()
-                outputs = model(images)
+                outputs = model(images, filename_list=filename_list)
                 loss = criterion(outputs, labels.unsqueeze(1).float())
                 # print(loss)
                 loss.backward()
@@ -262,7 +271,12 @@ def main(args):
                 logger.warning(' epoch: ' + str(epoch))
                 print('current best acc,', acc_best)
                 logger.warning('current best acc,' + str(acc_best))
-                torch.save(model.state_dict(), args.output_dir + args.log_name + '/' + model_file)
+                # torch.save(model.state_dict(), args.output_dir + args.log_name + '/' + str(epoch) + '_' + model_file)
+                torch.save({
+                    'total_steps': epoch,
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + model_file)
             # Decaying Learning Rate
             if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
                     epoch + 1) / float(total_epoch) == 0.9:
@@ -275,8 +289,12 @@ def main(args):
                 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
                 # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
         # Save the Model
-        torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
-
+        # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
+        torch.save({
+            'total_steps': epoch,
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '_last_model_92_sgd.pkl')
     else:
         test(model, deepfake_loader.datasets['test'], logger, writer, 0, btrain=False, device=device)
 
