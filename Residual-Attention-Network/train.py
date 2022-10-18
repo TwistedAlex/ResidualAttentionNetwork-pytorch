@@ -46,7 +46,8 @@ def my_collate(batch):
 
 
 # for test
-def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
+def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='model_92.pkl',
+         device=torch.device('cuda:0'), test_intermediate_output_dir=""):
     # Test
     if not btrain:
         model.load_state_dict(torch.load(model_file))
@@ -65,10 +66,15 @@ def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='mo
         # if count == 2:
         #     break
         label_idx_list = sample['labels']
+        filename_list = sample['filename']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
         labels = torch.Tensor(label_idx_list).to(device).float().squeeze()
-        outputs = model(images)
+        if len(test_intermediate_output_dir) == 0:
+            outputs = model(images)
+        else:
+            outputs = model(images, output_intermediate=True, filename_list=filename_list,
+                            output_dir=test_intermediate_output_dir)
         # _, predicted = torch.max(outputs.data, 1)
         # original logic:
         # total += labels.size(0)
@@ -160,7 +166,7 @@ parser.add_argument('--writer_file_load', type=str, default='',
 parser.add_argument('--checkpoint_file_path_load', type=str, default='',
                     help='a full path including the name of the checkpoint_file to load from, empty otherwise')
 parser.add_argument('--lr', default=0.0001, type=float, help='initial learning rate')
-
+parser.add_argument('--test', '-t', action='store_true', help='test mode')
 # Image Preprocessing
 def main(args):
     if len(args.writer_file_load) > 1:
@@ -180,8 +186,10 @@ def main(args):
     test_transform = transforms.Compose([
         transforms.ToTensor()
     ])
-    intermediate_output_dir = args.output_dir + "intermediate_output" + '/'
+    intermediate_output_dir = args.output_dir + args.log_name + '/' + "intermediate_output" + '/'
+    test_intermediate_output_dir = args.output_dir + args.log_name + '/' + "test_intermediate_output" + '/'
     pathlib.Path(intermediate_output_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(test_intermediate_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(args.output_dir + args.log_name + '/').mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.DEBUG,
                         filename=args.output_dir + args.log_name + '/' + "std.log",
@@ -203,7 +211,7 @@ def main(args):
     lr = args.lr
     criterion = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
-    is_train = True
+    is_train = not args.test
     is_pretrain = False
     acc_best = 0
     total_epoch = 50
@@ -221,6 +229,7 @@ def main(args):
             model.train()
             tims = time.time()
             iter_i = 0
+            total_iter_i = 0
             total_losses = 0
             logger.warning('epoch： ' + str(epoch))
             print('epoch： ' + str(epoch))
@@ -246,16 +255,17 @@ def main(args):
                 total_losses += loss.detach().cpu().item()
                 writer.add_scalar('Loss/train/cl_loss_per_iter',
                                   loss.detach().cpu().item(),
-                                  iter_i)
+                                  total_iter_i)
                 if (iter_i + 1) % 100 == 0:
                     print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
+                total_iter_i += 1
                 # if iter_i == 10:
                 #     break
-                # break
+                break
             writer.add_scalar('Loss/train/cl_loss_per_epoch',
                               total_losses / (iter_i * args.batchsize),
                               epoch)
@@ -263,7 +273,12 @@ def main(args):
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
             logger.warning('evaluate test set:')
-            acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
+            if epoch == total_epoch - 1:
+                acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
+                           test_intermediate_output_dir=test_intermediate_output_dir)
+            else:
+                acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
+
             if acc > acc_best:
                 acc_best = acc
                 print("***************************************")
@@ -278,6 +293,7 @@ def main(args):
                     'model': model.state_dict(),
                     'optimizer': optimizer.state_dict(),
                 }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + model_file)
+
             # Decaying Learning Rate
             if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
                     epoch + 1) / float(total_epoch) == 0.9:
@@ -289,6 +305,7 @@ def main(args):
                     print(param_group['lr'])
                 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
                 # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
+            break
         # Save the Model
         # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
         torch.save({
