@@ -245,7 +245,6 @@ parser.add_argument('--writer_file_load', type=str, default='',
 parser.add_argument('--checkpoint_file_path_load', type=str, default='',
                     help='a full path including the name of the checkpoint_file to load from, empty otherwise')
 parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
-parser.add_argument('--total_epochs', type=int, default=50, help='total number of epoch to train')
 parser.add_argument('--ex_weight', default=1.0, type=float, help='extra-supervision loss weight')
 parser.add_argument('--cl_weight', default=1.0, type=float, help='classification loss weight')
 parser.add_argument('--ex_mode', '-e', action='store_true', help='use new external supervision logic')
