@@ -251,7 +251,6 @@ parser.add_argument('--ex_mode', '-e', action='store_true', help='use new extern
 parser.add_argument('--nepoch_am', type=int, default=0, help='number of epochs to train without am loss')
 parser.add_argument('--nepoch_ex', type=int, default=100, help='number of epochs to train without ex loss')
 parser.add_argument('--grad_magnitude', help='grad magnitude of second path', type=int, default=1)
-parser.add_argument('--lr', default=0.0001, type=float, help='initial learning rate')
 parser.add_argument('--test', '-t', action='store_true', help='test mode')
 
 # Image Preprocessing
