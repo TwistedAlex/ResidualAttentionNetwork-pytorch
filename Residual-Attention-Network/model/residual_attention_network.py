@@ -194,10 +194,10 @@ class batch_RAN_Deepfake(nn.Module):
 
             _, _, img_h, img_w = images.size()
             if output_intermediate:
-                logits_cl = self.model(images, labels, output_intermediate=output_intermediate,
+                logits_cl = self.model(images, output_intermediate=output_intermediate,
                                        filename_list=filename_list, output_dir=output_dir, output_num=output_num)
             else:
-                logits_cl = self.model(images, labels)  # BS x num_classes
+                logits_cl = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
             if not is_train:
