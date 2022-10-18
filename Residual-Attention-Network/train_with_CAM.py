@@ -124,7 +124,8 @@ def my_collate(batch):
 
 
 # for test
-def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='model_92.pkl', device=torch.device('cuda:0')):
+def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='model_92.pkl',
+         device=torch.device('cuda:0'), test_intermediate_output_dir=""):
     # Test
     if not btrain:
         model.load_state_dict(torch.load(model_file))
@@ -143,10 +144,15 @@ def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='mo
         # if count == 2:
         #     break
         label_idx_list = sample['labels']
+        filename_list = sample['filename']
         batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
         images = batch.to(device)
         labels = torch.Tensor(label_idx_list).to(device).float().squeeze()
-        outputs, heatmaps = model(images)
+        if len(test_intermediate_output_dir) == 0:
+            outputs, heatmaps = model(images)
+        else:
+            outputs, heatmaps = model(images, output_intermediate=True, filename_list=filename_list,
+                            output_dir=test_intermediate_output_dir)
         # _, predicted = torch.max(outputs.data, 1)
         # original logic:
         # total += labels.size(0)
@@ -227,7 +233,8 @@ parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
 parser.add_argument('--batchsize', type=int, default=20, help='batch size')
 parser.add_argument('--input_dir', help='path to the input idr', type=str)
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.5)
-parser.add_argument('--nepoch', type=int, default=6000, help='number of iterations per epoch')
+parser.add_argument('--total_epochs', type=int, default=50, help='total number of epoch to train')
+parser.add_argument('--nepoch', type=int, default=5000, help='number of iterations per epoch')
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
@@ -245,7 +252,8 @@ parser.add_argument('--ex_mode', '-e', action='store_true', help='use new extern
 parser.add_argument('--nepoch_am', type=int, default=0, help='number of epochs to train without am loss')
 parser.add_argument('--nepoch_ex', type=int, default=100, help='number of epochs to train without ex loss')
 parser.add_argument('--grad_magnitude', help='grad magnitude of second path', type=int, default=1)
-
+parser.add_argument('--lr', default=0.0001, type=float, help='initial learning rate')
+parser.add_argument('--test', '-t', action='store_true', help='test mode')
 
 # Image Preprocessing
 def main(args):
@@ -257,16 +265,11 @@ def main(args):
     device = torch.device('cuda:' + str(args.deviceID))
     batch_size = args.batchsize
     epoch_size = args.nepoch
-    transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomResizedCrop(224, scale=(0.9, 1.0), ratio=(0.9, 1.1)),
-        # transforms.Scale(224),
-        transforms.ToTensor()
-    ])
-    test_transform = transforms.Compose([
-        transforms.ToTensor()
-    ])
 
+    intermediate_output_dir = args.output_dir + args.log_name + '/' + "intermediate_output" + '/'
+    test_intermediate_output_dir = args.output_dir + args.log_name + '/' + "test_intermediate_output" + '/'
+    pathlib.Path(intermediate_output_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(test_intermediate_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(args.output_dir + args.log_name + '/').mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.DEBUG,
                         filename=args.output_dir + args.log_name + '/' + "std.log",
@@ -297,7 +300,7 @@ def main(args):
     lr = args.lr  # 0.1
     criterion = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
-    is_train = True
+    is_train = not args.test
     is_pretrain = False
     acc_best = 0
     total_epoch = args.total_epochs
@@ -322,12 +325,14 @@ def main(args):
             model.train()
             tims = time.time()
             iter_i = 0
+            total_iter_i = 0
             total_losses = 0
             logger.warning('epoch： ' + str(epoch))
             print('epoch： ' + str(epoch))
             for sample in train_loader:
                 logger.warning('    iter： ' + str(iter_i))
                 label_idx_list = sample['labels']
+                filename_list = sample['filename']
                 batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
                 images = batch.to(device)
                 bg_masks = sample['bg_mask']
@@ -360,13 +365,14 @@ def main(args):
                 total_losses += loss.detach().cpu().item()
                 writer.add_scalar('Loss/train/cl_loss_per_iter',
                                   loss.detach().cpu().item(),
-                                  iter_i)
+                                  total_iter_i)
                 if (iter_i + 1) % 100 == 0:
                     print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                     logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                     epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
                 iter_i += 1
+                total_iter_i += 1
                 # if iter_i == 10:
                 #     break
                 # break
@@ -377,7 +383,11 @@ def main(args):
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
             logger.warning('evaluate test set:')
-            acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
+            if epoch == total_epoch - 1:
+                acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
+                           test_intermediate_output_dir=test_intermediate_output_dir)
+            else:
+                acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
             if acc > acc_best:
                 acc_best = acc
                 print("***************************************")

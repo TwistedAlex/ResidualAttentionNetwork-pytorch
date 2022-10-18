@@ -156,7 +156,7 @@ parser.add_argument('--batchsize', type=int, default=20, help='batch size')
 parser.add_argument('--input_dir', help='path to the input idr', type=str)
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.5)
 parser.add_argument('--total_epochs', type=int, default=50, help='total number of epoch to train')
-parser.add_argument('--nepoch', type=int, default=6000, help='number of iterations per epoch')
+parser.add_argument('--nepoch', type=int, default=5000, help='number of iterations per epoch')
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
@@ -178,15 +178,7 @@ def main(args):
     device = torch.device('cuda:' + str(args.deviceID))
     batch_size = args.batchsize
     epoch_size = args.nepoch
-    transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomResizedCrop(224, scale=(0.9, 1.0), ratio=(0.9, 1.1)),
-        # transforms.Scale(224),
-        transforms.ToTensor()
-    ])
-    test_transform = transforms.Compose([
-        transforms.ToTensor()
-    ])
+
     intermediate_output_dir = args.output_dir + args.log_name + '/' + "intermediate_output" + '/'
     test_intermediate_output_dir = args.output_dir + args.log_name + '/' + "test_intermediate_output" + '/'
     pathlib.Path(intermediate_output_dir).mkdir(parents=True, exist_ok=True)
@@ -293,7 +285,12 @@ def main(args):
                     'model': model.state_dict(),
                     'optimizer': optimizer.state_dict(),
                 }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + model_file)
-
+            else:
+                torch.save({
+                    'total_steps': epoch,
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                }, args.output_dir + args.log_name + '/' + "trainLast_" + model_file)
             # Decaying Learning Rate
             if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
                     epoch + 1) / float(total_epoch) == 0.9:
