@@ -265,7 +265,6 @@ def main(args):
                 total_iter_i += 1
                 # if iter_i == 10:
                 #     break
-                break
             writer.add_scalar('Loss/train/cl_loss_per_epoch',
                               total_losses / (iter_i * args.batchsize),
                               epoch)
@@ -273,7 +272,7 @@ def main(args):
             print('evaluate test set:')
             logger.warning('the epoch takes time:' + str(time.time() - tims))
             logger.warning('evaluate test set:')
-            if epoch == 0:
+            if epoch == total_epoch - 1:
                 acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
                            test_intermediate_output_dir=test_intermediate_output_dir)
             else:
@@ -305,7 +304,6 @@ def main(args):
                     print(param_group['lr'])
                 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
                 # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
-            break
         # Save the Model
         # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
         torch.save({
