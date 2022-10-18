@@ -155,7 +155,8 @@ parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
 parser.add_argument('--batchsize', type=int, default=20, help='batch size')
 parser.add_argument('--input_dir', help='path to the input idr', type=str)
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.5)
-parser.add_argument('--nepoch', type=int, default=50, help='number of iterations per epoch')
+parser.add_argument('--total_epochs', type=int, default=50, help='total number of epoch to train')
+parser.add_argument('--nepoch', type=int, default=6000, help='number of iterations per epoch')
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.1,
                     help='the relative number of masks to use in ex-supevision training')
@@ -214,7 +215,7 @@ def main(args):
     is_train = not args.test
     is_pretrain = False
     acc_best = 0
-    total_epoch = 50
+    total_epoch = args.total_epochs
     init_epoch = 0
     train_loader = deepfake_loader.datasets['train']
     if is_train is True:
