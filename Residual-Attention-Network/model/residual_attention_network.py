@@ -249,7 +249,7 @@ class batch_RAN_Deepfake(nn.Module):
         return self.enable_ex
 
 
-def output_intermediate(input_tensor, filename_list, suffix, batch_size, channel_size, output_dir, output_num):
+def process_intermediate(input_tensor, filename_list, suffix, batch_size, channel_size, output_dir, output_num):
     candidates = random.sample(range(channel_size), output_num)
     for batch_idx in range(batch_size):
         for channel_idx in candidates:
@@ -309,30 +309,30 @@ class ResidualAttentionModel_92(nn.Module):
         print(out.shape[0])
 
         if self.output_intermediate:
-            output_intermediate(out, filename_list, "stage1.png", out.shape[0], 256, output_dir, output_num)
+            process_intermediate(out, filename_list, "stage1.png", out.shape[0], 256, output_dir, output_num)
 
         # print(out.shape)  # 256, 56, 56
         out = self.residual_block2(out)
         # print(out.shape)  # 512, 28, 28
         out = self.attention_module2(out)
         if self.output_intermediate:
-            output_intermediate(out, filename_list, "stage2_1.png", out.shape[0], 512, output_dir, output_num)
+            process_intermediate(out, filename_list, "stage2_1.png", out.shape[0], 512, output_dir, output_num)
         out = self.attention_module2_2(out)
         if self.output_intermediate:
-            output_intermediate(out, filename_list, "stage2_2.png", out.shape[0], 512, output_dir, output_num)
+            process_intermediate(out, filename_list, "stage2_2.png", out.shape[0], 512, output_dir, output_num)
         # print(out.shape)  # 512, 28, 28
         out = self.residual_block3(out)
         # print(out.shape)  # 1024, 14, 14
         # print(out.data)
         out = self.attention_module3(out)
         if self.output_intermediate:
-            output_intermediate(out, filename_list, "stage3_1.png", out.shape[0], 1024, output_dir, output_num)
+            process_intermediate(out, filename_list, "stage3_1.png", out.shape[0], 1024, output_dir, output_num)
         out = self.attention_module3_2(out)
         if self.output_intermediate:
-            output_intermediate(out, filename_list, "stage3_2.png", out.shape[0], 1024, output_dir, output_num)
+            process_intermediate(out, filename_list, "stage3_2.png", out.shape[0], 1024, output_dir, output_num)
         out = self.attention_module3_3(out)
         if self.output_intermediate:
-            output_intermediate(out, filename_list, "stage3_3.png", out.shape[0], 1024, output_dir, output_num)
+            process_intermediate(out, filename_list, "stage3_3.png", out.shape[0], 1024, output_dir, output_num)
         # print(out.shape)  # 1024, 14, 14
         out = self.residual_block4(out)
         # print(out.shape)  # 2048, 7, 7
