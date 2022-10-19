@@ -151,6 +151,92 @@ def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='mo
     return auc  # correct / total
 
 
+def train(model, device, logger, epoch, train_loader, optimizer, criterion, writer, cfg):
+    model.train()
+    tims = time.time()
+    iter_i = 0
+    total_iter_i = 0
+    total_losses = 0
+    logger.warning('epoch： ' + str(epoch))
+    print('epoch： ' + str(epoch))
+    for sample in train_loader.datasets['train']:
+        logger.warning('    iter： ' + str(iter_i))
+        label_idx_list = sample['labels']
+        filename_list = sample['filename']
+        batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
+        images = batch.to(device)
+        labels = torch.Tensor(label_idx_list).to(device)
+        # images = Variable(images.cuda())
+        # # print(images.data)
+        # labels = Variable(labels.cuda())
+
+        # Forward + Backward + Optimize
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels.unsqueeze(1).float())
+        # print(loss)
+        loss.backward()
+        optimizer.step()
+        # print("hello")
+        total_losses += loss.detach().cpu().item()
+        writer.add_scalar('Loss/train/cl_loss_per_iter',
+                          loss.detach().cpu().item(),
+                          total_iter_i)
+        if (iter_i + 1) % 100 == 0:
+            print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
+                epoch + 1, args.total_epoch, iter_i + 1, len(train_loader), loss.item()))
+            logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
+                epoch + 1, args.total_epoch, iter_i + 1, len(train_loader), loss.item()))
+        iter_i += 1
+        total_iter_i += 1
+        # if iter_i == 10:
+        #     break
+    writer.add_scalar('Loss/train/cl_loss_per_epoch',
+                      total_losses / (iter_i * args.batchsize),
+                      epoch)
+    print('the epoch takes time:', time.time() - tims)
+    print('evaluate test set:')
+    logger.warning('the epoch takes time:' + str(time.time() - tims))
+    logger.warning('evaluate test set:')
+    if epoch == args.total_epoch - 1:
+        acc = test(model, train_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
+                   test_intermediate_output_dir=cfg['test_intermediate_output_dir'])
+    else:
+        acc = test(model, train_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
+
+    if acc > cfg['acc_best']:
+        cfg['acc_best'] = acc
+        print("***************************************")
+        logger.warning("***************************************")
+        print(' epoch: ', str(epoch))
+        logger.warning(' epoch: ' + str(epoch))
+        print('current best acc,', cfg['acc_best'])
+        logger.warning('current best acc,' + str(cfg['acc_best']))
+        # torch.save(model.state_dict(), args.output_dir + args.log_name + '/' + str(epoch) + '_' + model_file)
+        torch.save({
+            'total_steps': epoch,
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + model_file)
+    else:
+        torch.save({
+            'total_steps': epoch,
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }, args.output_dir + args.log_name + '/' + "trainLast_" + model_file)
+    # Decaying Learning Rate
+    if (epoch + 1) / float(args.total_epoch) == 0.3 or (epoch + 1) / float(args.total_epoch) == 0.6 or (
+            epoch + 1) / float(args.total_epoch) == 0.9:
+        cfg['lr'] /= 10
+        print('reset learning rate to:', cfg['lr'])
+        logger.warning('reset learning rate to:' + str(cfg['lr']))
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = cfg['lr']
+            print(param_group['lr'])
+        # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
+
+
 parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
 parser.add_argument('--batchsize', type=int, default=20, help='batch size')
 parser.add_argument('--input_dir', help='path to the input idr', type=str)
@@ -169,6 +255,8 @@ parser.add_argument('--checkpoint_file_path_load', type=str, default='',
 parser.add_argument('--lr', default=0.0001, type=float, help='initial learning rate')
 parser.add_argument('--test', '-t', action='store_true', help='test mode')
 # Image Preprocessing
+
+
 def main(args):
     if len(args.writer_file_load) > 1:
         writer = SummaryWriter(args.output_dir + args.writer_file_load)
@@ -200,7 +288,17 @@ def main(args):
                                      collate_fn=my_collate)
 
     model = ResidualAttentionModel().to(device)
-
+    i = 0
+    num_train_samples = 0
+    am_i = 0
+    ex_i = 0
+    total_i = 0
+    IOU_i = 0
+    acc_best = 0
+    cfg = {'categories': classes, 'i': i, 'num_train_samples': num_train_samples,
+           'am_i': am_i, 'ex_i': ex_i, 'total_i': total_i,
+           'IOU_i': IOU_i, 'acc_best': acc_best, 'test_intermediate_output_dir': test_intermediate_output_dir,
+           'lr': args.lr}
     lr = args.lr
     criterion = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
@@ -308,7 +406,8 @@ def main(args):
             'total_steps': epoch,
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
-        }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '_last_model_92_sgd.pkl')
+        }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') +
+           '_last_model_92_sgd.pkl')
     else:
         test(model, deepfake_loader.datasets['test'], logger, writer, 0, btrain=False, device=device)
 
