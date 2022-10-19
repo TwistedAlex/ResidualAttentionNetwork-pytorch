@@ -183,9 +183,9 @@ def train(model, device, logger, epoch, train_loader, optimizer, criterion, writ
                           cfg['total_iter_i'])
         if (iter_i + 1) % 100 == 0:
             print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                epoch + 1, args.total_epochs, iter_i + 1, len(train_loader), loss.item()))
+                epoch + 1, args.total_epochs, iter_i + 1, len(train_loader.datasets['train']), loss.item()))
             logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                epoch + 1, args.total_epochs, iter_i + 1, len(train_loader), loss.item()))
+                epoch + 1, args.total_epochs, iter_i + 1, len(train_loader.datasets['train']), loss.item()))
         iter_i += 1
         cfg['total_iter_i'] += 1
         # if iter_i == 10:
