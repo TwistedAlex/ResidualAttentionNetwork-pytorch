@@ -217,8 +217,10 @@ def train(model, device, logger, epoch, train_loader, optimizer, criterion, writ
             'total_steps': epoch,
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
-        }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + model_file)
+        }, args.output_dir + args.log_name + '/' + model_file)  # datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     else:
+        print(' Latest epoch: ', str(epoch))
+        logger.warning(' Latest epoch: ' + str(epoch))
         torch.save({
             'total_steps': epoch,
             'model': model.state_dict(),
@@ -238,13 +240,13 @@ def train(model, device, logger, epoch, train_loader, optimizer, criterion, writ
 
 
 parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
-parser.add_argument('--batchsize', type=int, default=20, help='batch size')
+parser.add_argument('--batchsize', type=int, default=32, help='batch size')
 parser.add_argument('--input_dir', help='path to the input idr', type=str)
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.5)
 parser.add_argument('--total_epochs', type=int, default=50, help='total number of epoch to train')
-parser.add_argument('--nepoch', type=int, default=5000, help='number of iterations per epoch')
+parser.add_argument('--nepoch', type=int, default=510, help='number of iterations per epoch')
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
-parser.add_argument('--masks_to_use', type=float, default=0.1,
+parser.add_argument('--masks_to_use', type=float, default=0.2,
                     help='the relative number of masks to use in ex-supevision training')
 parser.add_argument('--output_dir', help='path to the outputdir', type=str, default="logs/")
 parser.add_argument('--log_name', type=str, help='identifying name for storing tensorboard logs')
@@ -307,7 +309,7 @@ def main(args):
     acc_best = 0
     total_epoch = args.total_epochs
     init_epoch = 0
-    train_loader = deepfake_loader.datasets['train']
+
     if is_train is True:
         if len(args.checkpoint_file_path_load) > 0:
             checkpoint = torch.load(args.checkpoint_file_path_load, map_location='cpu')
@@ -317,89 +319,7 @@ def main(args):
             # model.load_state_dict((torch.load(model_file)))
         # Training
         for epoch in range(init_epoch, total_epoch):
-            model.train()
-            tims = time.time()
-            iter_i = 0
-            total_iter_i = 0
-            total_losses = 0
-            logger.warning('epoch： ' + str(epoch))
-            print('epoch： ' + str(epoch))
-            for sample in train_loader:
-                logger.warning('    iter： ' + str(iter_i))
-                label_idx_list = sample['labels']
-                filename_list = sample['filename']
-                batch = torch.stack(sample['preprocessed_images'], dim=0).squeeze()
-                images = batch.to(device)
-                labels = torch.Tensor(label_idx_list).to(device)
-                # images = Variable(images.cuda())
-                # # print(images.data)
-                # labels = Variable(labels.cuda())
-
-                # Forward + Backward + Optimize
-                optimizer.zero_grad()
-                outputs = model(images)
-                loss = criterion(outputs, labels.unsqueeze(1).float())
-                # print(loss)
-                loss.backward()
-                optimizer.step()
-                # print("hello")
-                total_losses += loss.detach().cpu().item()
-                writer.add_scalar('Loss/train/cl_loss_per_iter',
-                                  loss.detach().cpu().item(),
-                                  total_iter_i)
-                if (iter_i + 1) % 100 == 0:
-                    print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
-                    logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                    epoch + 1, total_epoch, iter_i + 1, len(train_loader), loss.item()))
-                iter_i += 1
-                total_iter_i += 1
-                # if iter_i == 10:
-                #     break
-            writer.add_scalar('Loss/train/cl_loss_per_epoch',
-                              total_losses / (iter_i * args.batchsize),
-                              epoch)
-            print('the epoch takes time:', time.time() - tims)
-            print('evaluate test set:')
-            logger.warning('the epoch takes time:' + str(time.time() - tims))
-            logger.warning('evaluate test set:')
-            if epoch == total_epoch - 1:
-                acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
-                           test_intermediate_output_dir=test_intermediate_output_dir)
-            else:
-                acc = test(model, deepfake_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device)
-
-            if acc > acc_best:
-                acc_best = acc
-                print("***************************************")
-                logger.warning("***************************************")
-                print(' epoch: ', str(epoch))
-                logger.warning(' epoch: ' + str(epoch))
-                print('current best acc,', acc_best)
-                logger.warning('current best acc,' + str(acc_best))
-                # torch.save(model.state_dict(), args.output_dir + args.log_name + '/' + str(epoch) + '_' + model_file)
-                torch.save({
-                    'total_steps': epoch,
-                    'model': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                }, args.output_dir + args.log_name + '/' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + model_file)
-            else:
-                torch.save({
-                    'total_steps': epoch,
-                    'model': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                }, args.output_dir + args.log_name + '/' + "trainLast_" + model_file)
-            # Decaying Learning Rate
-            if (epoch + 1) / float(total_epoch) == 0.3 or (epoch + 1) / float(total_epoch) == 0.6 or (
-                    epoch + 1) / float(total_epoch) == 0.9:
-                lr /= 10
-                print('reset learning rate to:', lr)
-                logger.warning('reset learning rate to:' + str(lr))
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = lr
-                    print(param_group['lr'])
-                # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-                # optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
+            train(model, device, logger, epoch, deepfake_loader, optimizer, criterion, writer, cfg)
         # Save the Model
         # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
         torch.save({
