@@ -151,11 +151,10 @@ def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='mo
     return auc  # correct / total
 
 
-def train(model, device, logger, epoch, train_loader, optimizer, criterion, writer, cfg):
+def train(args, model, device, logger, epoch, train_loader, optimizer, criterion, writer, cfg):
     model.train()
     tims = time.time()
     iter_i = 0
-    total_iter_i = 0
     total_losses = 0
     logger.warning('epoch： ' + str(epoch))
     print('epoch： ' + str(epoch))
@@ -181,14 +180,14 @@ def train(model, device, logger, epoch, train_loader, optimizer, criterion, writ
         total_losses += loss.detach().cpu().item()
         writer.add_scalar('Loss/train/cl_loss_per_iter',
                           loss.detach().cpu().item(),
-                          total_iter_i)
+                          cfg['total_iter_i'])
         if (iter_i + 1) % 100 == 0:
             print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                 epoch + 1, args.total_epoch, iter_i + 1, len(train_loader), loss.item()))
             logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
                 epoch + 1, args.total_epoch, iter_i + 1, len(train_loader), loss.item()))
         iter_i += 1
-        total_iter_i += 1
+        cfg['total_iter_i'] += 1
         # if iter_i == 10:
         #     break
     writer.add_scalar('Loss/train/cl_loss_per_epoch',
@@ -244,7 +243,7 @@ parser.add_argument('--batchsize', type=int, default=32, help='batch size')
 parser.add_argument('--input_dir', help='path to the input idr', type=str)
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.5)
 parser.add_argument('--total_epochs', type=int, default=50, help='total number of epoch to train')
-parser.add_argument('--nepoch', type=int, default=510, help='number of iterations per epoch')
+parser.add_argument('--nepoch', type=int, default=320, help='number of iterations per epoch')
 parser.add_argument('--deviceID', type=int, help='deviceID', default=0)
 parser.add_argument('--masks_to_use', type=float, default=0.2,
                     help='the relative number of masks to use in ex-supevision training')
@@ -290,17 +289,10 @@ def main(args):
                                      collate_fn=my_collate)
 
     model = ResidualAttentionModel().to(device)
-    i = 0
-    num_train_samples = 0
-    am_i = 0
-    ex_i = 0
-    total_i = 0
-    IOU_i = 0
-    acc_best = 0
-    cfg = {'categories': classes, 'i': i, 'num_train_samples': num_train_samples,
-           'am_i': am_i, 'ex_i': ex_i, 'total_i': total_i,
-           'IOU_i': IOU_i, 'acc_best': acc_best, 'test_intermediate_output_dir': test_intermediate_output_dir,
-           'lr': args.lr}
+    cfg = {'categories': classes, 'i': 0, 'num_train_samples': 0,
+           'am_i': 0, 'ex_i': 0, 'total_i': 0,
+           'IOU_i': 0, 'acc_best': 0, 'test_intermediate_output_dir': test_intermediate_output_dir,
+           'lr': args.lr, 'total_iter_i': 0}
     lr = args.lr
     criterion = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0001)
@@ -319,7 +311,7 @@ def main(args):
             # model.load_state_dict((torch.load(model_file)))
         # Training
         for epoch in range(init_epoch, total_epoch):
-            train(model, device, logger, epoch, deepfake_loader, optimizer, criterion, writer, cfg)
+            train(args, model, device, logger, epoch, deepfake_loader, optimizer, criterion, writer, cfg)
         # Save the Model
         # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
         torch.save({
