@@ -151,7 +151,7 @@ def test(model, test_loader, logger, writer, epoch, btrain=False, model_file='mo
     return auc  # correct / total
 
 
-def train(args, model, device, logger, epoch, train_loader, optimizer, criterion, writer, cfg):
+def train(model, device, logger, epoch, train_loader, optimizer, criterion, writer, cfg):
     model.train()
     tims = time.time()
     iter_i = 0
@@ -183,9 +183,9 @@ def train(args, model, device, logger, epoch, train_loader, optimizer, criterion
                           cfg['total_iter_i'])
         if (iter_i + 1) % 100 == 0:
             print("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                epoch + 1, args.total_epoch, iter_i + 1, len(train_loader), loss.item()))
+                epoch + 1, args.total_epochs, iter_i + 1, len(train_loader), loss.item()))
             logger.warning("Epoch [%d/%d], Iter [%d/%d] Loss: %.4f" % (
-                epoch + 1, args.total_epoch, iter_i + 1, len(train_loader), loss.item()))
+                epoch + 1, args.total_epochs, iter_i + 1, len(train_loader), loss.item()))
         iter_i += 1
         cfg['total_iter_i'] += 1
         # if iter_i == 10:
@@ -197,7 +197,7 @@ def train(args, model, device, logger, epoch, train_loader, optimizer, criterion
     print('evaluate test set:')
     logger.warning('the epoch takes time:' + str(time.time() - tims))
     logger.warning('evaluate test set:')
-    if epoch == args.total_epoch - 1:
+    if epoch == args.total_epochs - 1:
         acc = test(model, train_loader.datasets['test'], logger, writer, epoch, btrain=True, device=device,
                    test_intermediate_output_dir=cfg['test_intermediate_output_dir'])
     else:
@@ -226,8 +226,8 @@ def train(args, model, device, logger, epoch, train_loader, optimizer, criterion
             'optimizer': optimizer.state_dict(),
         }, args.output_dir + args.log_name + '/' + "trainLast_" + model_file)
     # Decaying Learning Rate
-    if (epoch + 1) / float(args.total_epoch) == 0.3 or (epoch + 1) / float(args.total_epoch) == 0.6 or (
-            epoch + 1) / float(args.total_epoch) == 0.9:
+    if (epoch + 1) / float(args.total_epochs) == 0.3 or (epoch + 1) / float(args.total_epochs) == 0.6 or (
+            epoch + 1) / float(args.total_epochs) == 0.9:
         cfg['lr'] /= 10
         print('reset learning rate to:', cfg['lr'])
         logger.warning('reset learning rate to:' + str(cfg['lr']))
@@ -299,7 +299,7 @@ def main(args):
     is_train = not args.test
     is_pretrain = False
     acc_best = 0
-    total_epoch = args.total_epochs
+    total_epochs = args.total_epochs
     init_epoch = 0
 
     if is_train is True:
@@ -310,8 +310,8 @@ def main(args):
             init_epoch = checkpoint['epoch'] + 1
             # model.load_state_dict((torch.load(model_file)))
         # Training
-        for epoch in range(init_epoch, total_epoch):
-            train(args, model, device, logger, epoch, deepfake_loader, optimizer, criterion, writer, cfg)
+        for epoch in range(init_epoch, total_epochs):
+            train(model, device, logger, epoch, deepfake_loader, optimizer, criterion, writer, cfg)
         # Save the Model
         # torch.save(model.state_dict(), args.output_dir + args.log_name + '/last_model_92_sgd.pkl')
         torch.save({
